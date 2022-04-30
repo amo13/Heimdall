@@ -57,3 +57,4 @@ install (TARGETS heimdall
 		RUNTIME	DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
 		LIBRARY	DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
+set(CMAKE_EXE_LINKER_FLAGS "-lobjc -framework IOKit -framework CoreFoundation")

@@ -1119,8 +1119,16 @@ bool BridgeManager::SendFile(FILE *file, unsigned int destination, unsigned int 
 				Interface::PrintErrorSameLine("\n");
 				Interface::PrintError("Failed to receive file part response!\n");
 
-				for (int retry = 0; retry < 4; retry++)
+				if (filePartIndex == 0)
 				{
+				    // Hack
+				    success = true;
+				    receivedPartIndex = filePartIndex;
+				}
+				else
+				{
+				    for (int retry = 0; retry < 4; ++retry)
+				    {
 					Interface::PrintErrorSameLine("\n");
 					Interface::PrintError("Retrying...");
 
@@ -1131,9 +1139,9 @@ bool BridgeManager::SendFile(FILE *file, unsigned int destination, unsigned int 
 
 					if (!success)
 					{
-						Interface::PrintErrorSameLine("\n");
-						Interface::PrintError("Failed to send file part packet!\n");
-						return (false);
+					    Interface::PrintErrorSameLine("\n");
+					    Interface::PrintError("Failed to send file part packet 2!\n");
+					    return (false);
 					}
 
 					// Response
@@ -1145,17 +1153,18 @@ bool BridgeManager::SendFile(FILE *file, unsigned int destination, unsigned int 
 
 					if (receivedPartIndex != filePartIndex)
 					{
-						Interface::PrintErrorSameLine("\n");
-						Interface::PrintError("Expected file part index: %d Received: %d\n", filePartIndex, receivedPartIndex);
-						return (false);
+					    Interface::PrintErrorSameLine("\n");
+					    Interface::PrintError("Expected file part index: %d Received: %d\n", filePartIndex, receivedPartIndex);
+					    return (false);
 					}
 
 					if (success)
-						break;
-				}
+					    break;
+				    }
 
-				if (!success)
+				    if (!success)
 					return (false);
+				}
 			}
 
 			if (receivedPartIndex != filePartIndex)
