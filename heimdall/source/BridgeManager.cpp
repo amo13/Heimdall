@@ -515,7 +515,7 @@ bool BridgeManager::BeginSession(void)
 
 	BeginSessionPacket beginSessionPacket;
 
-	if (!SendPacket(&beginSessionPacket))
+	if (!SendPacket(&beginSessionPacket, kDefaultTimeoutSend, kEmptyTransferNone))
 	{
 		Interface::PrintError("Failed to begin session!\n");
 		return (false);
@@ -538,7 +538,7 @@ bool BridgeManager::BeginSession(void)
 
 		FilePartSizePacket filePartSizePacket(fileTransferPacketSize);
 
-		if (!SendPacket(&filePartSizePacket))
+		if (!SendPacket(&filePartSizePacket, kDefaultTimeoutSend, kEmptyTransferNone))
 		{
 			Interface::PrintError("Failed to send file part size packet!\n");
 			return (false);
@@ -565,7 +565,7 @@ bool BridgeManager::EndSession(bool reboot) const
 	Interface::Print("Ending session...\n");
 
 	EndSessionPacket *endSessionPacket = new EndSessionPacket(EndSessionPacket::kRequestEndSession);
-	bool success = SendPacket(endSessionPacket);
+	bool success = SendPacket(endSessionPacket, kDefaultTimeoutSend, kEmptyTransferNone);
 	delete endSessionPacket;
 
 	if (!success)
@@ -591,7 +591,7 @@ bool BridgeManager::EndSession(bool reboot) const
 		Interface::Print("Rebooting device...\n");
 
 		EndSessionPacket *rebootDevicePacket = new EndSessionPacket(EndSessionPacket::kRequestRebootDevice);
-		bool success = SendPacket(rebootDevicePacket);
+		bool success = SendPacket(rebootDevicePacket, kDefaultTimeoutSend, kEmptyTransferNone);
 		delete rebootDevicePacket;
 
 		if (!success)
@@ -612,6 +612,16 @@ bool BridgeManager::EndSession(bool reboot) const
 			return (false);
 		}
 	}
+    else
+    {
+        Interface::Print("Resetting USB device...\n");
+
+        int result = libusb_reset_device(deviceHandle);
+        if (result != LIBUSB_SUCCESS)
+        {
+            Interface::PrintError("libusb error %d while resetting device.", result);
+        }
+    }
 
 	return (true);
 }
@@ -771,7 +781,7 @@ bool BridgeManager::ReceivePacket(InboundPacket *packet, int timeout, int emptyT
 bool BridgeManager::RequestDeviceType(unsigned int request, int *result) const
 {
 	DeviceTypePacket deviceTypePacket;
-	bool success = SendPacket(&deviceTypePacket);
+	bool success = SendPacket(&deviceTypePacket, kDefaultTimeoutSend, kEmptyTransferNone);
 
 	if (!success)
 	{
@@ -799,7 +809,7 @@ bool BridgeManager::SendPitData(const PitData *pitData) const
 
 	// Start file transfer
 	PitFilePacket *pitFilePacket = new PitFilePacket(PitFilePacket::kRequestFlash);
-	bool success = SendPacket(pitFilePacket);
+	bool success = SendPacket(pitFilePacket, kDefaultTimeoutSend, kEmptyTransferNone);
 	delete pitFilePacket;
 
 	if (!success)
@@ -820,7 +830,7 @@ bool BridgeManager::SendPitData(const PitData *pitData) const
 
 	// Transfer file size
 	FlashPartPitFilePacket *flashPartPitFilePacket = new FlashPartPitFilePacket(pitBufferSize);
-	success = SendPacket(flashPartPitFilePacket);
+	success = SendPacket(flashPartPitFilePacket, kDefaultTimeoutSend, kEmptyTransferNone);
 	delete flashPartPitFilePacket;
 
 	if (!success)
@@ -848,7 +858,7 @@ bool BridgeManager::SendPitData(const PitData *pitData) const
 
 	// Flash pit file
 	SendFilePartPacket *sendFilePartPacket = new SendFilePartPacket(pitBuffer, pitBufferSize);
-	success = SendPacket(sendFilePartPacket);
+	success = SendPacket(sendFilePartPacket, kDefaultTimeoutSend, kEmptyTransferNone);
 	delete sendFilePartPacket;
 
 	delete [] pitBuffer;
@@ -871,7 +881,7 @@ bool BridgeManager::SendPitData(const PitData *pitData) const
 
 	// End pit file transfer
 	EndPitFileTransferPacket *endPitFileTransferPacket = new EndPitFileTransferPacket(pitBufferSize);
-	success = SendPacket(endPitFileTransferPacket);
+	success = SendPacket(endPitFileTransferPacket, kDefaultTimeoutSend, kEmptyTransferNone);
 	delete endPitFileTransferPacket;
 
 	if (!success)
@@ -901,7 +911,7 @@ int BridgeManager::ReceivePitFile(unsigned char **pitBuffer) const
 
 	// Start file transfer
 	PitFilePacket *pitFilePacket = new PitFilePacket(PitFilePacket::kRequestDump);
-	success = SendPacket(pitFilePacket);
+	success = SendPacket(pitFilePacket, kDefaultTimeoutSend, kEmptyTransferNone);
 	delete pitFilePacket;
 
 	if (!success)
@@ -931,7 +941,7 @@ int BridgeManager::ReceivePitFile(unsigned char **pitBuffer) const
 	for (unsigned int i = 0; i < transferCount; i++)
 	{
 		DumpPartPitFilePacket *requestPacket = new DumpPartPitFilePacket(i);
-		success = SendPacket(requestPacket);
+		success = SendPacket(requestPacket, kDefaultTimeoutSend, kEmptyTransferNone);
 		delete requestPacket;
 
 		if (!success)
@@ -963,7 +973,7 @@ int BridgeManager::ReceivePitFile(unsigned char **pitBuffer) const
 
 	// End file transfer
 	pitFilePacket = new PitFilePacket(PitFilePacket::kRequestEndTransfer);
-	success = SendPacket(pitFilePacket);
+	success = SendPacket(pitFilePacket, kDefaultTimeoutSend, kEmptyTransferNone);
 	delete pitFilePacket;
 
 	if (!success)
@@ -1019,7 +1029,7 @@ bool BridgeManager::SendFile(FILE *file, unsigned int destination, unsigned int 
 	}
 
 	FileTransferPacket *flashFileTransferPacket = new FileTransferPacket(FileTransferPacket::kRequestFlash);
-	bool success = SendPacket(flashFileTransferPacket);
+	bool success = SendPacket(flashFileTransferPacket, kDefaultTimeoutSend, kEmptyTransferNone);
 	delete flashFileTransferPacket;
 
 	if (!success)
@@ -1069,7 +1079,7 @@ bool BridgeManager::SendFile(FILE *file, unsigned int destination, unsigned int 
 		unsigned int sequenceTotalByteCount = sequenceSize * fileTransferPacketSize;
 
 		FlashPartFileTransferPacket *beginFileTransferPacket = new FlashPartFileTransferPacket(sequenceTotalByteCount);
-		success = SendPacket(beginFileTransferPacket);
+		success = SendPacket(beginFileTransferPacket, kDefaultTimeoutSend, kEmptyTransferNone);
 		delete beginFileTransferPacket;
 
 		if (!success)
