@@ -11,7 +11,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt -y install build-essential cmake zlib1g-dev libgl1-mesa-dev libgl1-mesa-glx libusb-1.0-0-dev qt5-default
+        sudo apt -y install build-essential cmake zlib1g-dev libgl1-mesa-dev libgl1-mesa-glx libusb-1.0-0-dev qtbase5-dev qt5-qmake qtbase5-dev-tools
     - name: Build
       run: |
         mkdir build
