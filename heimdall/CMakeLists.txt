@@ -7,6 +7,12 @@ if((NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux") AND (NOT DEFINED libusb_USE_STATIC
 endif((NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux") AND (NOT DEFINED libusb_USE_STATIC_LIBS))
 
 find_package(libusb REQUIRED)
+find_library(CF CoreFoundation)
+find_library(IOK IOKit)
+find_library(Security Security)
+target_link_libraries(heimdall PRIVATE pit)
+target_link_libraries(heimdall PRIVATE ${LIBUSB_LIBRARY})
+target_link_libraries(heimdall objc ${CF} ${IOK} ${Security})
 
 set(LIBPIT_INCLUDE_DIRS
     ../libpit/source)
